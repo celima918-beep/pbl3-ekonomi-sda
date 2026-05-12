@@ -45,6 +45,7 @@ st.markdown("""
         border-radius: 10px;
         border: 1px solid #d1d9e0;
         margin-bottom: 20px;
+        text-align: center;
     }
     h1, h2, h3 { color: #1a3a5f; }
     .footer {
@@ -76,9 +77,9 @@ with st.sidebar:
     harga_input = st.slider("Harga Batu Bara (P0) $", 40.0, 150.0, 71.8)
     r_rate = st.slider("Tingkat Diskonto (r)", 0.01, 0.20, 0.05)
     
-    # TAMBAHAN REVISI: Kontrol MUC manual
-    mc_awal_tetap = 13.71
-    default_muc = harga_input - mc_awal_tetap
+    # Kontrol MUC manual
+    mc_awal_konst = 13.71
+    default_muc = harga_input - mc_awal_konst
     muc_manual = st.slider("MUC Awal (λ0) $", 0.0, 100.0, float(default_muc))
     
     pajak_gp = st.slider("Pajak Karbon Future ($)", 0, 100, 20)
@@ -87,7 +88,6 @@ with st.sidebar:
     st.caption("Fakultas Ekonomi dan Bisnis\nUniversitas Islam Bandung")
 
 # --- 4. PERHITUNGAN DINAMIS ---
-# MUC sekarang menggunakan input dari slider sidebar
 muc_awal_dinamis = muc_manual
 
 # LOGIKA GREEN PARADOX
@@ -139,6 +139,18 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
+# --- BAGIAN KEMBALI DIMUNCULKAN: PARAMETER DASAR ---
+st.subheader("📍 Parameter Dasar Analisis (T=0)")
+c_p1, c_p2, c_p3, c_p4 = st.columns(4)
+with c_p1:
+    st.markdown(f"<div class='param-card'><b>Harga Pasar (P0):</b><br>${harga_input:.2f}</div>", unsafe_allow_html=True)
+with c_p2:
+    st.markdown(f"<div class='param-card'><b>Biaya Marginal (MC0):</b><br>${mc_awal_konst}</div>", unsafe_allow_html=True)
+with c_p3:
+    st.markdown(f"<div class='param-card'><b>MUC Awal (λ0):</b><br>${muc_awal_dinamis:.2f}</div>", unsafe_allow_html=True)
+with c_p4:
+    st.markdown(f"<div class='param-card'><b>Suku Bunga (r):</b><br>{r_rate*100:.0f}%</div>", unsafe_allow_html=True)
+
 # --- 7. TABS UTAMA ---
 tabs = st.tabs(["📊 Data & Cadangan", "📈 Analisis Hotelling", "🏛️ Struktur Pasar", "🌿 Green Paradox"])
 
@@ -168,43 +180,31 @@ with tabs[1]:
         ax_ht.legend()
         st.pyplot(fig_ht)
 
-# --- BAGIAN III: STRUKTUR PASAR (KEMBALI DIMUNCULKAN) ---
 with tabs[2]:
     st.header("Perbandingan Berdasarkan Struktur Pasar")
-    st.markdown("<p style='color: #666;'>Bagaimana MUC tumbuh pada tingkat persaingan yang berbeda:</p>", unsafe_allow_html=True)
-    
     col_sp1, col_sp2, col_sp3 = st.columns(3)
     
     # Data Simulasi Struktur
-    muc_ps = muc_t  # Persaingan Sempurna (r)
-    muc_mono = muc_awal_dinamis * 1.5 * np.exp((r_rate * 0.7) * t_idx) # Monopoli lebih lambat eksploitasinya
+    muc_ps = muc_t 
+    muc_mono = muc_awal_dinamis * 1.5 * np.exp((r_rate * 0.7) * t_idx)
     muc_oligo = muc_awal_dinamis * 1.2 * np.exp((r_rate * 0.9) * t_idx)
 
     with col_sp1:
         st.markdown("### 🔍 Persaingan Sempurna")
         st.line_chart(muc_ps)
-        st.caption("MUC tumbuh tepat pada tingkat bunga (r).")
-
+        st.caption("MUC tumbuh pada tingkat bunga (r).")
     with col_sp2:
         st.markdown("### 🔒 Monopoli")
         st.line_chart(muc_mono)
-        st.caption("MUC tumbuh lebih lambat; produsen menahan stok.")
-
+        st.caption("MUC tumbuh lebih lambat (produsen menahan stok).")
     with col_sp3:
         st.markdown("### 🤝 Oligopoli")
         st.line_chart(muc_oligo)
-        st.caption("Keseimbangan antara persaingan dan kekuatan pasar.")
+        st.caption("Interaksi strategis antar produsen.")
 
-# --- BAGIAN IV: GREEN PARADOX ---
 with tabs[3]:
     st.header("Analisis Korelasi Green Paradox")
-    
-    st.markdown(f"""
-    <div class='explanation-box'>
-    <b>Korelasi Variabel:</b> Grafik ini menunjukkan hubungan antara sisa stok (Batang) dengan 
-    kenaikan harga dan MUC (Garis). Jika pajak karbon ditingkatkan, stok akan turun lebih curam (Supply Rush).
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(f"<div class='explanation-box'><b>Korelasi:</b> Hubungan antara penurunan stok fisik (Bar) dengan kenaikan nilai moneter (Garis). Pajak Karbon ${pajak_gp} memicu Supply Rush.</div>", unsafe_allow_html=True)
 
     fig_gp, ax1 = plt.subplots(figsize=(12, 6), facecolor='#f4f7f9')
     ax1.bar(tahun_proyeksi, stok_gp, color='green', alpha=0.3, label='Sisa Stok (Supply Rush)')
@@ -220,4 +220,4 @@ with tabs[3]:
     st.pyplot(fig_gp)
 
 st.divider()
-st.markdown("<div class='footer'>Dashboard Analisis Ekonomi SDA | FEB UNISBA | 2026</div>", unsafe_allow_html=True)
+st.markdown("<div class='footer'>Dashboard Analisis Ekonomi SDA | PBL 3 | FEB UNISBA | 2026</div>", unsafe_allow_html=True)
