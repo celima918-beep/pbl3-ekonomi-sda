@@ -10,7 +10,7 @@ st.set_page_config(page_title="Dashboard Ekonomi SDA - FEB UNISBA", layout="wide
 # --- BAGIAN LOGO LOKAL ---
 nama_file_logo = "logo_unisba.png" 
 
-# Custom CSS
+# Custom CSS untuk Estetika Profesional
 st.markdown("""
     <style>
     .main { background-color: #f4f7f9; }
@@ -25,7 +25,7 @@ st.markdown("""
         background-color: #ffffff; 
         padding: 20px; 
         border-radius: 10px; 
-        border-left: 5px solid #2d5a88; 
+        border-left: 5px solid #28a745; 
         margin: 15px 0px;
         box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         color: #333333;
@@ -84,19 +84,25 @@ with st.sidebar:
 mc_awal = 13.71
 muc_awal_dinamis = harga_input - mc_awal 
 
-# LOGIKA DINAMIS UNTUK STOK (Ekstraksi bereaksi terhadap r dan P)
+# LOGIKA DINAMIS: Green Paradox & Supply Rush
+# Pajak karbon di masa depan memicu ekstraksi lebih cepat di masa kini
 stok_awal = 544714167.87
-laju_ekstraksi_dasar = 80000000 # Rata-rata produksi tahunan
+laju_ekstraksi_normal = 75000000 
+efek_pajak = (pajak_gp / 50) * 15000000 # Semakin tinggi pajak, semakin besar supply rush
+faktor_r = (r_rate / 0.05)
 
-# Faktor percepatan: jika r naik atau P naik, ekstraksi bertambah
-faktor_akselerasi = (r_rate / 0.05) * (harga_input / 71.8)
-ekstraksi_tahunan = laju_ekstraksi_dasar * faktor_akselerasi
+ekstraksi_dinamis = (laju_ekstraksi_normal + efek_pajak) * faktor_r
 
-stok_dinamis = []
-current_stok = stok_awal
+stok_plot = []
+curr_stok = stok_awal
 for t in range(len(tahun_proyeksi)):
-    stok_dinamis.append(max(0, current_stok))
-    current_stok -= ekstraksi_tahunan
+    stok_plot.append(max(0, curr_stok))
+    curr_stok -= ekstraksi_dinamis
+
+# Perhitungan MUC Hotelling dengan r
+t_idx = np.arange(len(tahun_proyeksi))
+muc_t = muc_awal_dinamis * np.exp(r_rate * t_idx)
+p_t = np.array(mc_presisi) + muc_t
 
 # --- 5. HEADER ---
 col_l, col_j = st.columns([1, 6])
@@ -135,106 +141,77 @@ c_p1, c_p2, c_p3, c_p4 = st.columns(4)
 with c_p1:
     st.markdown(f"<div class='param-card'><b>Harga Dasar (P0):</b><br>${harga_input:.2f}</div>", unsafe_allow_html=True)
 with c_p2:
-    st.markdown(f"<div class='param-card'><b>Biaya Marginal (MC0):</b><br>${mc_awal}</div>", unsafe_allow_html=True)
-with c_p3:
     st.markdown(f"<div class='param-card'><b>MUC Awal (λ0):</b><br>${muc_awal_dinamis:.2f}</div>", unsafe_allow_html=True)
+with c_p3:
+    st.markdown(f"<div class='param-card'><b>Tingkat Diskonto (r):</b><br>{r_rate*100:.0f}%</div>", unsafe_allow_html=True)
 with c_p4:
-    st.markdown(f"<div class='param-card'><b>Suku Bunga (r):</b><br>{r_rate*100:.0f}%</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='param-card'><b>Pajak Karbon:</b><br>${pajak_gp}</div>", unsafe_allow_html=True)
 
-# --- 8. BAGIAN I: DATA HISTORIS & CADANGAN DINAMIS ---
-st.divider()
-st.header("I. Tinjauan Data Historis & Cadangan")
-tab1, tab2 = st.tabs(["📊 Tabel & Grafik Harga", "📉 Proyeksi Deplesi Stok (Dinamis)"])
+# --- 8. BAGIAN UTAMA ---
+tab_hist, tab_hotelling, tab_green = st.tabs(["📊 Data Historis", "📈 Model Hotelling", "🌿 Analisis Green Paradox"])
 
-with tab1:
-    c1, c2 = st.columns([2, 3])
-    with c1: 
-        st.write("**Data Historis 2018-2024**")
+with tab_hist:
+    col1, col2 = st.columns([2, 3])
+    with col1:
+        st.write("**Historis Produksi & Harga**")
         st.dataframe(df_h, use_container_width=True)
-    with c2:
-        fig_h, ax_h = plt.subplots(figsize=(8, 4.2), facecolor='#f4f7f9')
-        ax_h.plot(df_h['Tahun'], df_h['Harga Batu Bara (P)'], marker='o', color='#1a3a5f', linewidth=2.5)
-        ax_h.set_title("Fluktuasi Harga Pasar", fontsize=10, fontweight='bold')
-        ax_h.set_xlabel("Tahun"); ax_h.set_ylabel("Harga ($/Ton)")
+    with col2:
+        fig_h, ax_h = plt.subplots(figsize=(8, 4.5), facecolor='#f4f7f9')
+        ax_h.plot(df_h['Tahun'], df_h['Harga Batu Bara (P)'], marker='o', color='#1a3a5f', label='Harga')
+        ax_h.set_ylabel("Harga ($)")
+        ax_h.set_title("Trend Harga Historis")
         st.pyplot(fig_h)
 
-with tab2:
-    c3, c4 = st.columns([2, 3])
-    df_s = pd.DataFrame({'Tahun': tahun_proyeksi, 'Sisa Stok': stok_dinamis})
-    with c3: 
-        st.write("**Estimasi Sisa Cadangan (Responsif terhadap Parameter)**")
-        st.dataframe(df_s.style.format({'Sisa Stok': '{:,.0f}'}), use_container_width=True)
-    with c4:
-        fig_s, ax_s = plt.subplots(figsize=(8, 4.2), facecolor='#f4f7f9')
-        ax_s.bar(df_s['Tahun'], df_s['Sisa Stok'], color='#2d5a88', alpha=0.8)
-        ax_s.set_title("Laju Penurunan Stok Fisik", fontsize=10, fontweight='bold')
-        ax_s.set_xlabel("Tahun Proyeksi"); ax_s.set_ylabel("Volume (Ton)")
-        st.pyplot(fig_s)
-        st.info("💡 Grafik di atas akan turun lebih curam jika Harga atau Suku Bunga dinaikkan (Supply Rush).")
+with tab_hotelling:
+    st.write("**Proyeksi Harga & Rente Kelangkaan**")
+    df_res = pd.DataFrame({'Tahun': tahun_proyeksi, 'MUC': muc_t, 'Harga': p_t})
+    st.dataframe(df_res.style.format('{:,.2f}'), use_container_width=True)
+    
+    fig_ht, ax_ht = plt.subplots(figsize=(10, 4))
+    ax_ht.plot(tahun_proyeksi, p_t, label='Harga Proyeksi (P)', color='green', marker='s')
+    ax_ht.plot(tahun_proyeksi, muc_t, label='MUC (λ)', color='blue', linestyle='--')
+    ax_ht.set_title("Keseimbangan Hotelling")
+    ax_ht.legend()
+    st.pyplot(fig_ht)
 
-# --- 9. BAGIAN II: ANALISIS HOTTELLING ---
-st.divider()
-st.header("II. Model Alokasi Intertemporal (Hotelling)")
-
-t_idx = np.arange(0, len(tahun_proyeksi))
-muc_t = muc_awal_dinamis * np.exp(r_rate * t_idx)
-p_t = np.array(mc_presisi) + muc_t
-
-df_est = pd.DataFrame({
-    'Tahun': tahun_proyeksi,
-    'MC (Biaya)': mc_presisi,
-    'MUC (Kelangkaan)': muc_t,
-    'Harga Proyeksi': p_t
-})
-
-st.dataframe(df_est.style.format('{:,.2f}'), use_container_width=True)
-
-cg1, cg2 = st.columns(2)
-with cg1:
-    fig_p, ax_p = plt.subplots(figsize=(6, 4), facecolor='#f4f7f9')
-    ax_p.plot(tahun_proyeksi, p_t, label='Harga Proyeksi', color='#1e7e34', linewidth=2)
-    ax_p.plot(tahun_proyeksi, mc_presisi, label='Biaya (MC)', color='#bd2130', linestyle='--')
-    ax_p.set_title("Keseimbangan Harga & Biaya", fontweight='bold')
-    ax_p.set_xlabel("Tahun"); ax_p.set_ylabel("Nilai ($)")
-    ax_p.legend(); st.pyplot(fig_p)
-
-with cg2:
-    fig_m, ax_m = plt.subplots(figsize=(6, 4), facecolor='#f4f7f9')
-    ax_m.fill_between(tahun_proyeksi, muc_t, color='#1a3a5f', alpha=0.1)
-    ax_m.plot(tahun_proyeksi, muc_t, color='#1a3a5f', marker='o')
-    ax_m.set_title("Pertumbuhan Rente Kelangkaan (MUC)", fontweight='bold')
-    ax_m.set_xlabel("Tahun"); ax_m.set_ylabel("MUC ($)")
-    st.pyplot(fig_m)
-
-# --- 10. BAGIAN III: STRUKTUR PASAR ---
-st.divider()
-st.header("III. Perbandingan Strategi Struktur Pasar")
-sp1, sp2, sp3 = st.columns(3)
-
-with sp1:
-    st.markdown("🔍 **Persaingan Sempurna**")
-    st.line_chart(muc_t)
-    st.caption("MUC tumbuh proporsional dengan r.")
-with sp2:
-    st.markdown("🔒 **Monopoli**")
-    muc_m = muc_awal_dinamis * 1.4 * np.exp((r_rate/2) * t_idx)
-    st.line_chart(muc_m)
-    st.caption("Produksi ditahan untuk harga tinggi.")
-with sp3:
-    st.markdown("🤝 **Oligopoli**")
-    muc_o = muc_awal_dinamis * 1.1 * np.exp((r_rate/1.2) * t_idx)
-    st.line_chart(muc_o)
-    st.caption("Interaksi strategis produsen.")
-
-# --- 11. BAGIAN IV: GREEN PARADOX ---
-st.divider()
-st.header("IV. Simulasi Dampak Green Paradox")
-cgp1, cgp2 = st.columns([2, 1])
-with cgp1:
-    st.markdown(f"<div class='explanation-box'><b>Analisis Pajak Karbon (${pajak_gp}):</b><br>Regulasi masa depan memicu <i>Supply Rush</i> atau percepatan ekstraksi hari ini untuk menghindari beban biaya pajak nantinya.</div>", unsafe_allow_html=True)
-with cgp2:
-    if pajak_gp > 35: st.warning("⚠️ Potensi Supply Rush Tinggi")
-    else: st.success("✅ Dampak Regulasi Stabil")
+# --- BAGIAN IV: REVISI GREEN PARADOX ---
+with tab_green:
+    st.header("Analisis Dampak Green Paradox")
+    
+    st.markdown(f"""
+    <div class="explanation-box">
+    <b>Mekanisme Alat Analisis:</b><br>
+    Ketika variabel <b>Pajak Karbon (${pajak_gp})</b> dinaikkan, produsen melihat ancaman biaya di masa depan. 
+    Hal ini memicu <i>Supply Rush</i>, di mana stok cadangan akan dikuras lebih cepat di tahun-tahun awal. 
+    Secara simultan, <b>MUC</b> akan merespons tingkat diskonto <b>({r_rate*100:.0f}%)</b> untuk menentukan 
+    apakah lebih menguntungkan menjual batu bara sekarang atau membiarkannya di dalam tanah.
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Grafik Korelasi Green Paradox
+    fig_gp, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5), facecolor='#f4f7f9')
+    
+    # Subplot 1: Sisa Stok vs Pajak Karbon
+    ax1.fill_between(tahun_proyeksi, stok_plot, color='green', alpha=0.2)
+    ax1.plot(tahun_proyeksi, stok_plot, color='green', marker='o', linewidth=2)
+    ax1.set_title("Penurunan Stok (Supply Rush Efek)", fontweight='bold')
+    ax1.set_ylabel("Volume Cadangan (Ton)")
+    ax1.grid(True, linestyle='--', alpha=0.6)
+    
+    # Subplot 2: Hubungan MUC & r dalam Konteks Pajak
+    ax2.plot(tahun_proyeksi, muc_t, color='#1a3a5f', marker='^', label='MUC (Pertumbuhan r)')
+    ax2.set_title("Respon MUC terhadap Suku Bunga", fontweight='bold')
+    ax2.set_ylabel("Nilai Kelangkaan ($)")
+    ax2.legend()
+    ax2.grid(True, linestyle='--', alpha=0.6)
+    
+    st.pyplot(fig_gp)
+    
+    # Alert System
+    if pajak_gp > 40:
+        st.error(f"🚨 **Peringatan Green Paradox:** Pajak sebesar ${pajak_gp} terlalu agresif! Produsen mempercepat ekstraksi, stok cadangan habis di bawah tahun 2031.")
+    else:
+        st.success("✅ **Stabilitas Ekstraksi:** Tekanan regulasi masih dapat dikompensasi oleh cadangan fisik.")
 
 st.divider()
 st.markdown("<div class='footer'>Dashboard Analisis Ekonomi SDA | PBL 3 | FEB UNISBA | 2026</div>", unsafe_allow_html=True)
