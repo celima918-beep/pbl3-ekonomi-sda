@@ -8,10 +8,9 @@ import os
 st.set_page_config(page_title="Dashboard Ekonomi SDA - FEB UNISBA", layout="wide")
 
 # --- BAGIAN LOGO LOKAL ---
-# Pastikan file ini ada di folder yang sama dengan kodingan ini
 nama_file_logo = "logo_unisba.png" 
 
-# Custom CSS untuk Estetika Profesional
+# Custom CSS
 st.markdown("""
     <style>
     .main { background-color: #f4f7f9; }
@@ -57,12 +56,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 2. DATA UTAMA & PARAMETER AWAL ---
-# Parameter yang kamu maksud (Nilai Awal)
-harga_dasar_2024 = 71.80  # P0
-mc_awal = 13.71           # MC0
-muc_awal = harga_dasar_2024 - mc_awal # MUC0
-
+# --- 2. DATA UTAMA ---
 data_historis = {
     'Tahun': [2018, 2019, 2020, 2021, 2022, 2023, 2024],
     'Produksi (q)': [81100000, 86300000, 83300000, 78800000, 71900000, 77800000, 74700000],
@@ -74,17 +68,26 @@ tahun_proyeksi = [2025, 2026, 2027, 2028, 2029, 2030, 2031]
 mc_presisi = [13.709, 11.674, 8.385, 10.234, 20.298, 48.653, 116.892] 
 stok_presisi = [544714167.87, 464358418.26, 380093666.69, 291729755.06, 199067274.82, 101897116.93, 0]
 
-# --- 3. SIDEBAR ---
+# --- 3. SIDEBAR (KONTROL SIMULASI) ---
 with st.sidebar:
     if os.path.exists(nama_file_logo):
         st.image(nama_file_logo, width=100)
     st.markdown("### ⚙️ Kontrol Simulasi")
+    
+    # MENAMBAHKAN SLIDER HARGA DI SINI
+    harga_input = st.slider("Atur Harga Dasar (P0) $", 40.0, 150.0, 71.8)
+    
     r_rate = st.slider("Tingkat Diskonto (r)", 0.01, 0.20, 0.05)
     pajak_gp = st.slider("Pajak Karbon Future ($)", 0, 100, 20)
     st.divider()
     st.caption("Fakultas Ekonomi dan Bisnis\nUniversitas Islam Bandung")
 
-# --- 4. HEADER ---
+# --- 4. PERHITUNGAN DINAMIS ---
+mc_awal = 13.71
+# MUC berubah mengikuti harga yang diinput di sidebar
+muc_awal_dinamis = harga_input - mc_awal 
+
+# --- 5. HEADER ---
 col_l, col_j = st.columns([1, 6])
 with col_l:
     if os.path.exists(nama_file_logo):
@@ -93,7 +96,7 @@ with col_j:
     st.markdown("<h1 style='margin-bottom: 0;'>Analisis Intertemporal Sumber Daya Batu Bara</h1>", unsafe_allow_html=True)
     st.markdown("<h3 style='margin-top: 0; color: #555; font-weight: normal;'>PT Bumi Resources Tbk</h3>", unsafe_allow_html=True)
 
-# --- 5. PANEL ANGGOTA KELOMPOK ---
+# --- 6. PANEL ANGGOTA KELOMPOK ---
 st.markdown(f"""
 <div class="identity-card">
     <table style="width:100%; border:none; color:white;">
@@ -115,25 +118,19 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# --- 6. PARAMETER DASAR (YANG DITAMBAHKAN) ---
+# --- 7. PARAMETER DASAR ---
 st.subheader("📍 Parameter Dasar Analisis (T=0)")
 c_p1, c_p2, c_p3, c_p4 = st.columns(4)
 with c_p1:
-    st.markdown(f"<div class='param-card'><b>Harga Dasar (P0):</b><br>${harga_dasar_2024}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='param-card'><b>Harga Dasar (P0):</b><br>${harga_input:.2f}</div>", unsafe_allow_html=True)
 with c_p2:
     st.markdown(f"<div class='param-card'><b>Biaya Marginal (MC0):</b><br>${mc_awal}</div>", unsafe_allow_html=True)
 with c_p3:
-    st.markdown(f"<div class='param-card'><b>MUC Awal (λ0):</b><br>${muc_awal:.2f}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='param-card'><b>MUC Awal (λ0):</b><br>${muc_awal_dinamis:.2f}</div>", unsafe_allow_html=True)
 with c_p4:
     st.markdown(f"<div class='param-card'><b>Suku Bunga (r):</b><br>{r_rate*100:.0f}%</div>", unsafe_allow_html=True)
 
-st.markdown("""
-<div class='explanation-box'>
-    <b>Catatan Parameter:</b> Analisis ini menggunakan tahun 2024 sebagai tahun dasar (T=0). 
-    Nilai <i>Marginal User Cost</i> (MUC) awal diperoleh dari selisih Harga Pasar dikurangi Biaya Marginal Produksi pada tahun tersebut.
-</div>""", unsafe_allow_html=True)
-
-# --- 7. BAGIAN I: DATA HISTORIS ---
+# --- 8. BAGIAN I: DATA HISTORIS ---
 st.divider()
 st.header("I. Tinjauan Data Historis & Cadangan")
 tab1, tab2 = st.tabs(["📊 Tabel & Grafik Harga", "📉 Proyeksi Deplesi Stok"])
@@ -163,12 +160,13 @@ with tab2:
         ax_s.set_xlabel("Tahun Proyeksi"); ax_s.set_ylabel("Volume (Ton)")
         st.pyplot(fig_s)
 
-# --- 8. BAGIAN II: ANALISIS HOTTELLING ---
+# --- 9. BAGIAN II: ANALISIS HOTTELLING ---
 st.divider()
 st.header("II. Model Alokasi Intertemporal (Hotelling)")
 
 t_idx = np.arange(0, len(tahun_proyeksi))
-muc_t = muc_awal * np.exp(r_rate * t_idx)
+# Menggunakan MUC awal hasil slider harga
+muc_t = muc_awal_dinamis * np.exp(r_rate * t_idx)
 p_t = np.array(mc_presisi) + muc_t
 
 df_est = pd.DataFrame({
@@ -197,7 +195,7 @@ with cg2:
     ax_m.set_xlabel("Tahun"); ax_m.set_ylabel("MUC ($)")
     st.pyplot(fig_m)
 
-# --- 9. BAGIAN III: STRUKTUR PASAR ---
+# --- 10. BAGIAN III: STRUKTUR PASAR ---
 st.divider()
 st.header("III. Perbandingan Strategi Struktur Pasar")
 sp1, sp2, sp3 = st.columns(3)
@@ -208,16 +206,16 @@ with sp1:
     st.caption("MUC tumbuh proporsional dengan r.")
 with sp2:
     st.markdown("🔒 **Monopoli**")
-    muc_m = muc_awal * 1.4 * np.exp((r_rate/2) * t_idx)
+    muc_m = muc_awal_dinamis * 1.4 * np.exp((r_rate/2) * t_idx)
     st.line_chart(muc_m)
     st.caption("Produksi ditahan untuk harga tinggi.")
 with sp3:
     st.markdown("🤝 **Oligopoli**")
-    muc_o = muc_awal * 1.1 * np.exp((r_rate/1.2) * t_idx)
+    muc_o = muc_awal_dinamis * 1.1 * np.exp((r_rate/1.2) * t_idx)
     st.line_chart(muc_o)
     st.caption("Interaksi strategis produsen.")
 
-# --- 10. BAGIAN IV: GREEN PARADOX ---
+# --- 11. BAGIAN IV: GREEN PARADOX ---
 st.divider()
 st.header("IV. Simulasi Dampak Green Paradox")
 cgp1, cgp2 = st.columns([2, 1])
