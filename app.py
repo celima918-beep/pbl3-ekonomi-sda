@@ -10,7 +10,7 @@ st.set_page_config(page_title="Dashboard Ekonomi SDA - FEB UNISBA", layout="wide
 # --- BAGIAN LOGO LOKAL ---
 nama_file_logo = "logo_unisba.png" 
 
-# Custom CSS untuk Estetika Profesional
+# Custom CSS
 st.markdown("""
     <style>
     .main { background-color: #f4f7f9; }
@@ -65,8 +65,7 @@ data_historis = {
 df_h = pd.DataFrame(data_historis)
 
 tahun_proyeksi = [2025, 2026, 2027, 2028, 2029, 2030, 2031]
-mc_presisi = [13.709, 11.674, 8.385, 10.234, 20.298, 48.653, 116.892] 
-stok_presisi = [544714167.87, 464358418.26, 380093666.69, 291729755.06, 199067274.82, 101897116.93, 0]
+mc_presisi = [13.71, 15.50, 18.20, 22.00, 28.00, 38.00, 55.00] 
 
 # --- 3. SIDEBAR (KONTROL SIMULASI) ---
 with st.sidebar:
@@ -74,18 +73,30 @@ with st.sidebar:
         st.image(nama_file_logo, width=100)
     st.markdown("### ⚙️ Kontrol Simulasi")
     
-    # REVISI: Label diganti menjadi "Harga Batu Bara (P0) $"
     harga_input = st.slider("Harga Batu Bara (P0) $", 40.0, 150.0, 71.8)
-    
     r_rate = st.slider("Tingkat Diskonto (r)", 0.01, 0.20, 0.05)
     pajak_gp = st.slider("Pajak Karbon Future ($)", 0, 100, 20)
+    
     st.divider()
     st.caption("Fakultas Ekonomi dan Bisnis\nUniversitas Islam Bandung")
 
 # --- 4. PERHITUNGAN DINAMIS ---
 mc_awal = 13.71
-# MUC berubah mengikuti harga yang diinput di sidebar
 muc_awal_dinamis = harga_input - mc_awal 
+
+# LOGIKA DINAMIS UNTUK STOK (Ekstraksi bereaksi terhadap r dan P)
+stok_awal = 544714167.87
+laju_ekstraksi_dasar = 80000000 # Rata-rata produksi tahunan
+
+# Faktor percepatan: jika r naik atau P naik, ekstraksi bertambah
+faktor_akselerasi = (r_rate / 0.05) * (harga_input / 71.8)
+ekstraksi_tahunan = laju_ekstraksi_dasar * faktor_akselerasi
+
+stok_dinamis = []
+current_stok = stok_awal
+for t in range(len(tahun_proyeksi)):
+    stok_dinamis.append(max(0, current_stok))
+    current_stok -= ekstraksi_tahunan
 
 # --- 5. HEADER ---
 col_l, col_j = st.columns([1, 6])
@@ -130,10 +141,10 @@ with c_p3:
 with c_p4:
     st.markdown(f"<div class='param-card'><b>Suku Bunga (r):</b><br>{r_rate*100:.0f}%</div>", unsafe_allow_html=True)
 
-# --- 8. BAGIAN I: DATA HISTORIS ---
+# --- 8. BAGIAN I: DATA HISTORIS & CADANGAN DINAMIS ---
 st.divider()
 st.header("I. Tinjauan Data Historis & Cadangan")
-tab1, tab2 = st.tabs(["📊 Tabel & Grafik Harga", "📉 Proyeksi Deplesi Stok"])
+tab1, tab2 = st.tabs(["📊 Tabel & Grafik Harga", "📉 Proyeksi Deplesi Stok (Dinamis)"])
 
 with tab1:
     c1, c2 = st.columns([2, 3])
@@ -149,9 +160,9 @@ with tab1:
 
 with tab2:
     c3, c4 = st.columns([2, 3])
-    df_s = pd.DataFrame({'Tahun': tahun_proyeksi, 'Sisa Stok': stok_presisi})
+    df_s = pd.DataFrame({'Tahun': tahun_proyeksi, 'Sisa Stok': stok_dinamis})
     with c3: 
-        st.write("**Estimasi Sisa Cadangan**")
+        st.write("**Estimasi Sisa Cadangan (Responsif terhadap Parameter)**")
         st.dataframe(df_s.style.format({'Sisa Stok': '{:,.0f}'}), use_container_width=True)
     with c4:
         fig_s, ax_s = plt.subplots(figsize=(8, 4.2), facecolor='#f4f7f9')
@@ -159,6 +170,7 @@ with tab2:
         ax_s.set_title("Laju Penurunan Stok Fisik", fontsize=10, fontweight='bold')
         ax_s.set_xlabel("Tahun Proyeksi"); ax_s.set_ylabel("Volume (Ton)")
         st.pyplot(fig_s)
+        st.info("💡 Grafik di atas akan turun lebih curam jika Harga atau Suku Bunga dinaikkan (Supply Rush).")
 
 # --- 9. BAGIAN II: ANALISIS HOTTELLING ---
 st.divider()
