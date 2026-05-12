@@ -90,7 +90,7 @@ with st.sidebar:
 # --- 4. PERHITUNGAN DINAMIS ---
 muc_awal_dinamis = muc_manual
 
-# LOGIKA GREEN PARADOX
+# LOGIKA GREEN PARADOX & STOK
 stok_awal = 544714167.87
 laju_ekstraksi_base = 75000000 
 efek_supply_rush = (pajak_gp / 100) * 20000000 
@@ -139,7 +139,7 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# --- BAGIAN KEMBALI DIMUNCULKAN: PARAMETER DASAR ---
+# PARAMETER DASAR
 st.subheader("📍 Parameter Dasar Analisis (T=0)")
 c_p1, c_p2, c_p3, c_p4 = st.columns(4)
 with c_p1:
@@ -169,7 +169,7 @@ with tabs[1]:
     st.subheader("Model Optimasi Hotelling")
     col_hot1, col_hot2 = st.columns([1, 2])
     with col_hot1:
-        st.write("**Tabel Proyeksi**")
+        st.write("**Tabel Proyeksi Harga & MUC**")
         df_res = pd.DataFrame({'Tahun': tahun_proyeksi, 'MUC': muc_t, 'Harga': p_t})
         st.dataframe(df_res.style.format('{:,.2f}'), use_container_width=True)
     with col_hot2:
@@ -183,41 +183,43 @@ with tabs[1]:
 with tabs[2]:
     st.header("Perbandingan Berdasarkan Struktur Pasar")
     col_sp1, col_sp2, col_sp3 = st.columns(3)
-    
-    # Data Simulasi Struktur
     muc_ps = muc_t 
     muc_mono = muc_awal_dinamis * 1.5 * np.exp((r_rate * 0.7) * t_idx)
     muc_oligo = muc_awal_dinamis * 1.2 * np.exp((r_rate * 0.9) * t_idx)
-
     with col_sp1:
         st.markdown("### 🔍 Persaingan Sempurna")
         st.line_chart(muc_ps)
-        st.caption("MUC tumbuh pada tingkat bunga (r).")
     with col_sp2:
         st.markdown("### 🔒 Monopoli")
         st.line_chart(muc_mono)
-        st.caption("MUC tumbuh lebih lambat (produsen menahan stok).")
     with col_sp3:
         st.markdown("### 🤝 Oligopoli")
         st.line_chart(muc_oligo)
-        st.caption("Interaksi strategis antar produsen.")
 
 with tabs[3]:
     st.header("Analisis Korelasi Green Paradox")
-    st.markdown(f"<div class='explanation-box'><b>Korelasi:</b> Hubungan antara penurunan stok fisik (Bar) dengan kenaikan nilai moneter (Garis). Pajak Karbon ${pajak_gp} memicu Supply Rush.</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='explanation-box'><b>Analisis Deplesi:</b> Grafik di bawah memadukan sisa stok cadangan dengan kenaikan MUC akibat pajak karbon sebesar <b>${pajak_gp}</b>.</div>", unsafe_allow_html=True)
 
     fig_gp, ax1 = plt.subplots(figsize=(12, 6), facecolor='#f4f7f9')
     ax1.bar(tahun_proyeksi, stok_gp, color='green', alpha=0.3, label='Sisa Stok (Supply Rush)')
     ax1.set_ylabel('Sisa Stok Cadangan (Ton)', color='green')
-    
     ax2 = ax1.twinx()
     ax2.plot(tahun_proyeksi, muc_t, color='blue', marker='o', label='MUC (λ)')
     ax2.plot(tahun_proyeksi, p_t, color='red', marker='x', label='Harga Proyeksi')
     ax2.set_ylabel('Nilai ($)', color='#1a3a5f')
-
     plt.title("Stok vs MUC vs Harga (Efek Green Paradox)", fontweight='bold')
     ax1.legend(loc='upper left'); ax2.legend(loc='upper right')
     st.pyplot(fig_gp)
+
+    # TAMBAHAN REVISI: Tabel Data Stok yang Menghilang
+    st.subheader("📋 Tabel Proyeksi Sisa Stok Cadangan")
+    df_stok = pd.DataFrame({
+        'Tahun': tahun_proyeksi,
+        'Sisa Stok (Ton)': stok_gp,
+        'MUC ($)': muc_t,
+        'Harga ($)': p_t
+    })
+    st.dataframe(df_stok.style.format({'Sisa Stok (Ton)': '{:,.0f}', 'MUC ($)': '{:,.2f}', 'Harga ($)': '{:,.2f}'}), use_container_width=True)
 
 st.divider()
 st.markdown("<div class='footer'>Dashboard Analisis Ekonomi SDA | PBL 3 | FEB UNISBA | 2026</div>", unsafe_allow_html=True)
