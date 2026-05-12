@@ -46,6 +46,7 @@ st.markdown("""
         border: 1px solid #d1d9e0;
         margin-bottom: 20px;
         text-align: center;
+        color: #1a3a5f;
     }
     h1, h2, h3 { color: #1a3a5f; }
     .footer {
@@ -135,7 +136,19 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# --- 7. TABS UTAMA (DIPISAH) ---
+# --- PANEL PARAMETER DASAR (KEMBALI) ---
+st.subheader("📍 Parameter Dasar Analisis (T=0)")
+c_p1, c_p2, c_p3, c_p4 = st.columns(4)
+with c_p1:
+    st.markdown(f"<div class='param-card'><b>Harga Pasar (P0):</b><br>${harga_input:.2f}</div>", unsafe_allow_html=True)
+with c_p2:
+    st.markdown(f"<div class='param-card'><b>Biaya Marginal (MC0):</b><br>${mc_awal_konst}</div>", unsafe_allow_html=True)
+with c_p3:
+    st.markdown(f"<div class='param-card'><b>MUC Awal (λ0):</b><br>${muc_manual:.2f}</div>", unsafe_allow_html=True)
+with c_p4:
+    st.markdown(f"<div class='param-card'><b>Suku Bunga (r):</b><br>{r_rate*100:.0f}%</div>", unsafe_allow_html=True)
+
+# --- 7. TABS UTAMA ---
 tabs = st.tabs(["📊 Data & Cadangan", "📈 Analisis Hotelling", "🏛️ Struktur Pasar", "📦 Simulasi Stok", "🌿 Green Paradox"])
 
 with tabs[0]:
@@ -186,7 +199,7 @@ with tabs[2]:
 
 with tabs[3]:
     st.header("Simulasi Deplesi Stok Cadangan")
-    st.markdown("<div class='explanation-box'>Visualisasi ini menunjukkan laju pengurangan fisik cadangan batu bara berdasarkan tingkat ekstraksi tahunan.</div>", unsafe_allow_html=True)
+    st.markdown("<div class='explanation-box'>Visualisasi laju deplesi stok cadangan fisik batu bara.</div>", unsafe_allow_html=True)
     
     col_st1, col_st2 = st.columns([3, 2])
     with col_st1:
@@ -206,16 +219,16 @@ with tabs[3]:
 
 with tabs[4]:
     st.header("Analisis Green Paradox")
-    st.markdown(f"""<div class='explanation-box'><b>Analisis:</b> Pajak karbon masa depan sebesar <b>${pajak_gp}</b> memicu <i>Supply Rush</i>. 
-    Hal ini menyebabkan percepatan ekstraksi (stok turun lebih cepat) sebelum pajak diberlakukan secara penuh.</div>""", unsafe_allow_html=True)
+    st.markdown(f"""<div class='explanation-box'><b>Analisis:</b> Pajak karbon sebesar <b>${pajak_gp}</b> memicu percepatan ekstraksi (Supply Rush) 
+    sebelum kebijakan berlaku penuh untuk menghindari hilangnya rente di masa depan.</div>""", unsafe_allow_html=True)
 
     fig_gp, ax1 = plt.subplots(figsize=(12, 6), facecolor='#f4f7f9')
-    ax1.bar(tahun_proyeksi, stok_gp, color='gray', alpha=0.2, label='Deplesi Stok')
+    ax1.bar([str(t) for t in tahun_proyeksi], stok_gp, color='gray', alpha=0.2, label='Deplesi Stok')
     ax1.set_ylabel('Volume Cadangan (Ton)', color='gray')
     
     ax2 = ax1.twinx()
-    ax2.plot(tahun_proyeksi, muc_t, color='blue', marker='o', label='MUC (λ)')
-    ax2.plot(tahun_proyeksi, p_t, color='red', marker='x', label='Harga Proyeksi')
+    ax2.plot([str(t) for t in tahun_proyeksi], muc_t, color='blue', marker='o', label='MUC (λ)')
+    ax2.plot([str(t) for t in tahun_proyeksi], p_t, color='red', marker='x', label='Harga Proyeksi')
     ax2.set_ylabel('Nilai Moneter ($)', color='#1a3a5f')
     
     plt.title("Korelasi Stok vs Nilai Moneter (Efek Green Paradox)", fontweight='bold')
