@@ -64,6 +64,7 @@ data_historis = {
     'Harga Batu Bara (P)': [58.4, 56.1, 47.6, 67.4, 121.0, 81.3, 71.8]
 }
 df_h = pd.DataFrame(data_historis)
+df_h['Tahun'] = df_h['Tahun'].astype(str) # Agar tahun tidak pakai koma
 
 tahun_proyeksi = [2025, 2026, 2027, 2028, 2029, 2030, 2031]
 mc_presisi = [13.71, 15.50, 18.20, 22.00, 28.00, 38.00, 55.00] 
@@ -170,8 +171,12 @@ with tabs[1]:
     col_hot1, col_hot2 = st.columns([1, 2])
     with col_hot1:
         st.write("**Tabel Proyeksi Harga & MUC**")
-        df_res = pd.DataFrame({'Tahun': tahun_proyeksi, 'MUC': muc_t, 'Harga': p_t})
-        st.dataframe(df_res.style.format('{:,.2f}'), use_container_width=True)
+        df_res = pd.DataFrame({
+            'Tahun': [str(t) for t in tahun_proyeksi], # Paksa tahun jadi string
+            'MUC ($)': muc_t, 
+            'Harga ($)': p_t
+        })
+        st.dataframe(df_res.style.format({'MUC ($)': '{:,.2f}', 'Harga ($)': '{:,.2f}'}), use_container_width=True)
     with col_hot2:
         fig_ht, ax_ht = plt.subplots(figsize=(10, 5))
         ax_ht.plot(tahun_proyeksi, p_t, label='Harga Proyeksi', color='green', marker='s')
@@ -198,7 +203,7 @@ with tabs[2]:
 
 with tabs[3]:
     st.header("Analisis Korelasi Green Paradox")
-    st.markdown(f"<div class='explanation-box'><b>Analisis Deplesi:</b> Grafik di bawah memadukan sisa stok cadangan dengan kenaikan MUC akibat pajak karbon sebesar <b>${pajak_gp}</b>.</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='explanation-box'><b>Analisis Deplesi:</b> Hubungan sisa stok dengan kenaikan rente kelangkaan (MUC).</div>", unsafe_allow_html=True)
 
     fig_gp, ax1 = plt.subplots(figsize=(12, 6), facecolor='#f4f7f9')
     ax1.bar(tahun_proyeksi, stok_gp, color='green', alpha=0.3, label='Sisa Stok (Supply Rush)')
@@ -211,15 +216,19 @@ with tabs[3]:
     ax1.legend(loc='upper left'); ax2.legend(loc='upper right')
     st.pyplot(fig_gp)
 
-    # TAMBAHAN REVISI: Tabel Data Stok yang Menghilang
-    st.subheader("📋 Tabel Proyeksi Sisa Stok Cadangan")
+    # SIMULASI STOK YANG DIMINTA
+    st.subheader("📋 Tabel Simulasi Deplesi Stok Cadangan")
     df_stok = pd.DataFrame({
-        'Tahun': tahun_proyeksi,
+        'Tahun': [str(t) for t in tahun_proyeksi], # Tahun bersih tanpa koma
         'Sisa Stok (Ton)': stok_gp,
         'MUC ($)': muc_t,
         'Harga ($)': p_t
     })
-    st.dataframe(df_stok.style.format({'Sisa Stok (Ton)': '{:,.0f}', 'MUC ($)': '{:,.2f}', 'Harga ($)': '{:,.2f}'}), use_container_width=True)
+    st.dataframe(df_stok.style.format({
+        'Sisa Stok (Ton)': '{:,.0f}', 
+        'MUC ($)': '{:,.2f}', 
+        'Harga ($)': '{:,.2f}'
+    }), use_container_width=True)
 
 st.divider()
 st.markdown("<div class='footer'>Dashboard Analisis Ekonomi SDA | PBL 3 | FEB UNISBA | 2026</div>", unsafe_allow_html=True)
