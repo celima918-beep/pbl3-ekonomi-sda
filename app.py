@@ -136,7 +136,7 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# --- PANEL PARAMETER DASAR (KEMBALI) ---
+# --- PANEL PARAMETER DASAR ---
 st.subheader("📍 Parameter Dasar Analisis (T=0)")
 c_p1, c_p2, c_p3, c_p4 = st.columns(4)
 with c_p1:
@@ -161,6 +161,7 @@ with tabs[0]:
         ax_h.plot(df_h['Tahun'], df_h['Harga Batu Bara (P)'], marker='o', color='#1a3a5f')
         ax_h.set_title("Tren Harga Historis (2018-2024)")
         st.pyplot(fig_h)
+        st.info("**Deskripsi:** Grafik ini menunjukkan fluktuasi harga batu bara dunia dalam 7 tahun terakhir, yang menjadi dasar penentuan harga awal (P0) untuk simulasi proyeksi ke depan.")
 
 with tabs[1]:
     st.subheader("Model Optimasi Hotelling")
@@ -180,6 +181,7 @@ with tabs[1]:
         ax_ht.set_title("Keseimbangan Nilai Intertemporal")
         ax_ht.legend()
         st.pyplot(fig_ht)
+        st.info("**Deskripsi:** Grafik Kaidah Hotelling ini menggambarkan bahwa seiring menipisnya cadangan, nilai kelangkaan (MUC) meningkat secara eksponensial searah tingkat diskonto, yang mendorong harga proyeksi terus naik di masa depan.")
 
 with tabs[2]:
     st.header("Analisis Struktur Pasar")
@@ -190,17 +192,19 @@ with tabs[2]:
     with col_sp1:
         st.markdown("### 🔍 Persaingan Sempurna")
         st.line_chart(muc_ps)
+        st.caption("Laju kenaikan MUC normal sesuai tingkat diskonto pasar.")
     with col_sp2:
         st.markdown("### 🔒 Monopoli")
         st.line_chart(muc_mono)
+        st.caption("Kenaikan harga lebih lambat namun dimulai dari tingkat yang lebih tinggi untuk memaksimalkan profit jangka panjang.")
     with col_sp3:
         st.markdown("### 🤝 Oligopoli")
         st.line_chart(muc_oligo)
+        st.caption("Titik tengah antara persaingan sempurna dan monopoli.")
+    st.info("**Deskripsi:** Perbandingan tren MUC di berbagai struktur pasar menunjukkan bagaimana penguasaan pasar memengaruhi kecepatan ekstraksi dan penentuan harga sumber daya.")
 
 with tabs[3]:
     st.header("Simulasi Deplesi Stok Cadangan")
-    st.markdown("<div class='explanation-box'>Visualisasi laju deplesi stok cadangan fisik batu bara.</div>", unsafe_allow_html=True)
-    
     col_st1, col_st2 = st.columns([3, 2])
     with col_st1:
         fig_stok, ax_stok = plt.subplots(figsize=(10, 5))
@@ -208,6 +212,7 @@ with tabs[3]:
         ax_stok.set_title("Proyeksi Sisa Cadangan (Ton)")
         ax_stok.set_ylabel("Ton")
         st.pyplot(fig_stok)
+        st.info("**Deskripsi:** Grafik batang ini memvisualisasikan penurunan jumlah fisik batu bara yang tersisa di dalam bumi akibat aktivitas ekstraksi tahunan hingga mencapai titik habis.")
     
     with col_st2:
         st.write("**Data Stok Per Tahun**")
@@ -234,6 +239,7 @@ with tabs[4]:
     plt.title("Korelasi Stok vs Nilai Moneter (Efek Green Paradox)", fontweight='bold')
     ax1.legend(loc='upper left'); ax2.legend(loc='upper right')
     st.pyplot(fig_gp)
+    st.info("**Deskripsi:** Grafik ini menunjukkan fenomena 'Paradoks Hijau', di mana ancaman regulasi lingkungan (pajak karbon) justru mempercepat pengurasan stok batu bara karena produsen berlomba mengekstraksi cadangan sebelum nilainya turun akibat pajak.")
 
 st.divider()
 st.markdown("<div class='footer'>Dashboard Analisis Ekonomi SDA | PBL 3 | FEB UNISBA | 2026</div>", unsafe_allow_html=True)
