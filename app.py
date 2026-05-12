@@ -10,7 +10,7 @@ st.set_page_config(page_title="Dashboard Ekonomi SDA - FEB UNISBA", layout="wide
 # --- BAGIAN LOGO LOKAL ---
 nama_file_logo = "logo_unisba.png" 
 
-# Custom CSS
+# Custom CSS untuk Estetika Profesional
 st.markdown("""
     <style>
     .main { background-color: #f4f7f9; }
@@ -74,8 +74,8 @@ with st.sidebar:
         st.image(nama_file_logo, width=100)
     st.markdown("### ⚙️ Kontrol Simulasi")
     
-    # MENAMBAHKAN SLIDER HARGA DI SINI
-    harga_input = st.slider("Atur Harga Dasar (P0) $", 40.0, 150.0, 71.8)
+    # REVISI: Label diganti menjadi "Harga Batu Bara (P0) $"
+    harga_input = st.slider("Harga Batu Bara (P0) $", 40.0, 150.0, 71.8)
     
     r_rate = st.slider("Tingkat Diskonto (r)", 0.01, 0.20, 0.05)
     pajak_gp = st.slider("Pajak Karbon Future ($)", 0, 100, 20)
@@ -165,7 +165,6 @@ st.divider()
 st.header("II. Model Alokasi Intertemporal (Hotelling)")
 
 t_idx = np.arange(0, len(tahun_proyeksi))
-# Menggunakan MUC awal hasil slider harga
 muc_t = muc_awal_dinamis * np.exp(r_rate * t_idx)
 p_t = np.array(mc_presisi) + muc_t
 
